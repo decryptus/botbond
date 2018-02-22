@@ -127,12 +127,10 @@ class BotbondSlackChannelOut(BotbondChannelOutBase):
                                                     'channel': self.channel['name']})
 
                 time.sleep(_DELAY)
-            except WebSocketConnectionClosedException:
+            except Exception:
                 LOG.info("reconnecting to: %r", self.channel['name'])
                 time.sleep(_DELAY)
                 self.channel['conn'] = SlackClient(self.channel['options']['token'])
-            except Exception, e:
-                LOG.exception("%r", e)
 
 
 class BotbondSlackPlugin(DWhoPluginBase):
