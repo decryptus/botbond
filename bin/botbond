@@ -131,8 +131,9 @@ def main(options):
     try:
         LOG.info("pidfile ok")
         root_logger.setLevel(options.loglevel)
-        os.setuid(uid)
+        os.chown(options.pidfile, uid, gid)
         os.setgid(gid)
+        os.setuid(uid)
         os.umask(022)
 
         config.start_plugins()

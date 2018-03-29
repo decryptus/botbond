@@ -130,7 +130,6 @@ class BotbondSlackChannelOut(BotbondChannelOutBase):
             except Exception:
                 LOG.info("reconnecting to: %r", self.channel['name'])
                 time.sleep(_DELAY)
-                #self.channel['conn'] = SlackClient(self.channel['options']['token'])
                 self.channel['conn'].rtm_connect(with_team_state=False)
 
 
