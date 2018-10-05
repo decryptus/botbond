@@ -20,7 +20,7 @@ __license__ = """
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = '0.14'
+__version__ = '0.15'
 
 # TODO: load Python logging configuration (using standard logging.config)
 
@@ -35,12 +35,27 @@ from botbond.plugins import * # XXX
 from dwho.modules import * # XXX
 from dwho import config
 from httpdis import httpdis
-from sonicprobe import helpers
 from sonicprobe.libs import daemonize
 
 
-SYSLOG_NAME = "botbond"
-LOG         = logging.getLogger(SYSLOG_NAME)
+SYSLOG_NAME     = "botbond"
+LOG             = logging.getLogger(SYSLOG_NAME)
+
+DEFAULT_PIDFILE = "/run/botbond/botbond.pid"
+DEFAULT_LOGFILE = "/var/log/botbond/daemon.log"
+
+try:
+    BOTBOND_USER  = pwd.getpwnam(os.environ.get('BOTBOND_USER') or 'botbond').pw_name
+except KeyError:
+    BOTBOND_USER  = pwd.getpwuid(os.geteuid())[0]
+
+try:
+    BOTBOND_GROUP = grp.getgrnam(os.environ.get('BOTBOND_GROUP') or 'botbond').gr_name
+except KeyError:
+    BOTBOND_GROUP = grp.getgrgid(os.getegid())[0]
+
+BOTBOND_PIDFILE = os.environ.get('BOTBOND_PIDFILE') or DEFAULT_PIDFILE
+BOTBOND_LOGFILE = os.environ.get('BOTBOND_LOGFILE') or DEFAULT_LOGFILE
 
 
 def argv_parse_check():
@@ -71,22 +86,22 @@ def argv_parse_check():
                       help      = "Use configuration file <conffile> instead of %default")
     parser.add_option("-p",
                       dest      = 'pidfile',
-                      default   = "/run/botbond.pid",
+                      default   = BOTBOND_PIDFILE,
                       help      = "Use PID file <pidfile> instead of %default")
     parser.add_option("-u",
                       dest      = 'username',
                       type      = 'string',
-                      default   = pwd.getpwuid(os.geteuid())[0],
+                      default   = BOTBOND_USER,
                       help      = "Use username for the process instead of %default")
     parser.add_option("-g",
                       dest      = 'groupname',
                       type      = 'string',
-                      default   = grp.getgrgid(os.getegid())[0],
+                      default   = BOTBOND_GROUP,
                       help      = "Use groupname for the process instead of %default")
     parser.add_option("--logfile",
                       dest      = 'logfile',
                       type      = 'string',
-                      default   = "/var/log/botbond/daemon.log",
+                      default   = BOTBOND_LOGFILE,
                       help      = "Use log file <logfile> instead of %default")
     parser.add_option("--listen-addr",
                       dest      = 'listen_addr',
@@ -110,11 +125,14 @@ def main(options):
     """
     Main function; start the server
     """
+    uid = pwd.getpwnam(options.username)[2]
+    gid = grp.getgrnam(options.groupname)[2]
+
+    config.make_piddir(options.pidfile, uid, gid)
+    config.make_logdir(options.logfile, uid, gid)
+
     root_logger = config.init_logger(options.logfile, SYSLOG_NAME)
     options     = config.load_conf(options.conffile, options)
-
-    uid         = pwd.getpwnam(options.username)[2]
-    gid         = grp.getgrnam(options.groupname)[2]
 
     setattr(options, 'server_version', "%s/%s" % (SYSLOG_NAME, __version__))
     setattr(options, 'sys_version', '')
@@ -125,11 +143,6 @@ def main(options):
     if not options.foreground:
         LOG.info("Transforming into a daemon from hell")
         daemonize.daemonize()
-
-    dirpid = os.path.dirname(options.pidfile)
-    if dirpid:
-        helpers.make_dirs(dirpid)
-        os.chown(dirpid, uid, gid)
 
     LOG.info("locking PID")
     daemonize.lock_pidfile_or_die(options.pidfile)
