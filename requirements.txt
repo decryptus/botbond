@@ -1,9 +1,9 @@
-dwho>=0.2.67
+dwho>=0.2.89
 emoji
-httpdis>=0.5.5
+httpdis>=0.5.13
 hypchat
 pyyaml>=3.10
 redis>=2.4.0
 requests
 slackclient
-sonicprobe>=0.2.59
+sonicprobe>=0.2.70
