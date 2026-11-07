@@ -1,6 +1,6 @@
 dwho>=0.2.89
 emoji
-httpdis>=0.5.13
+httpdis>=0.7.1
 hypchat
 pyyaml>=3.10
 redis>=2.4.0
