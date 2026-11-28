@@ -11,6 +11,7 @@ if os.path.isfile('VERSION'):
     version = open('VERSION', 'r').readline().strip() or version
 
 setup(
+    python_requires     = '<3',
     name                = 'botbond',
     version             = version,
     description         = 'botbond',
